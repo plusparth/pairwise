@@ -70,7 +70,7 @@ const BatchMediaSelection: React.FC<BatchMediaSelectionProps> = ({
     // Set a new timeout
     const timeout = setTimeout(() => {
       handleSearch();
-    }, 100);
+    }, 200);
 
     setDebounceTimeout(timeout);
 

@@ -38,7 +38,7 @@ export async function searchBooks(query: string): Promise<Media[]> {
       // Build the cover URL if cover_i exists
       let posterPath = "";
       if (book.cover_i) {
-        posterPath = `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg`;
+        posterPath = `https://covers.openlibrary.org/b/id/${book.cover_i}-L.jpg`;
       }
 
       return {
