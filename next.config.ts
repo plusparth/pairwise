@@ -15,6 +15,7 @@ const nextConfig: NextConfig = {
         pathname: "/b/id/**",
       },
     ],
+    unoptimized: true,
   },
   basePath: "/pairwise",
   output: "export",

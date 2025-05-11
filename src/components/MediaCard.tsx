@@ -1,6 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import { Media, RankedMedia } from "../types/media";
+import nextConfig from "../../next.config";
 
 interface MediaCardProps {
   media: Media | RankedMedia;
@@ -17,12 +18,13 @@ const MediaCard: React.FC<MediaCardProps> = ({
 
   if (media.type === "book") {
     // OpenLibrary images already have the full URL
-    imageUrl = media.posterPath || "/placeholder-poster.svg";
+    imageUrl =
+      media.posterPath || `${nextConfig.basePath}/placeholder-poster.svg`;
   } else {
     // TMDB images need the base URL added
     imageUrl = media.posterPath
       ? `https://image.tmdb.org/t/p/w300${media.posterPath}`
-      : "/placeholder-poster.svg";
+      : `${nextConfig.basePath}/placeholder-poster.svg`;
   }
 
   // Type guard to check if media is RankedMedia with rating
