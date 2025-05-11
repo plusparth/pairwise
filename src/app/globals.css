@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@theme {
+  --color-rich-black: #0c1618;
+  --color-orange-peel: #ffa630;
+  --color-brunswick-green: #004643;
+  --color-celadon: #98c9a3;
+  --color-bittersweet: #ff5a5f;
+
+  --font-display: "Inter", sans-serif;
+}
+
+:root {
+}
