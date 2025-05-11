@@ -15,6 +15,7 @@ const ListCreation: React.FC<ListCreationProps> = ({
   onListsUpdate,
 }) => {
   const [newListName, setNewListName] = useState("");
+  const [listType, setListType] = useState<"movie" | "tv" | "book">("movie");
 
   const handleCreateList = () => {
     if (!newListName.trim()) return;
@@ -22,6 +23,7 @@ const ListCreation: React.FC<ListCreationProps> = ({
     const newList: MediaList = {
       id: uuidv4(),
       name: newListName.trim(),
+      listType,
       items: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -43,16 +45,65 @@ const ListCreation: React.FC<ListCreationProps> = ({
     }
   };
 
+  // Function to get the display name for a media type
+  const getListTypeDisplay = (type: "movie" | "tv" | "book") => {
+    switch (type) {
+      case "movie":
+        return "Movies";
+      case "tv":
+        return "TV Shows";
+      case "book":
+        return "Books";
+      default:
+        return "Media";
+    }
+  };
+
   return (
     <div className="w-full max-w-4xl mx-auto p-4">
       <div className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">Create a New List</h2>
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-2">List Type</label>
+          <div className="flex rounded-md overflow-hidden">
+            <button
+              className={`px-4 py-2 ${
+                listType === "movie"
+                  ? "bg-brunswick-green text-white"
+                  : "bg-celadon/20 text-rich-black/70 dark:bg-brunswick-green/30 dark:text-white/80"
+              }`}
+              onClick={() => setListType("movie")}
+            >
+              Movies
+            </button>
+            <button
+              className={`px-4 py-2 ${
+                listType === "tv"
+                  ? "bg-brunswick-green text-white"
+                  : "bg-celadon/20 text-rich-black/70 dark:bg-brunswick-green/30 dark:text-white/80"
+              }`}
+              onClick={() => setListType("tv")}
+            >
+              TV Shows
+            </button>
+            <button
+              className={`px-4 py-2 ${
+                listType === "book"
+                  ? "bg-brunswick-green text-white"
+                  : "bg-celadon/20 text-rich-black/70 dark:bg-brunswick-green/30 dark:text-white/80"
+              }`}
+              onClick={() => setListType("book")}
+            >
+              Books
+            </button>
+          </div>
+        </div>
         <div className="flex gap-2">
           <input
             type="text"
             value={newListName}
             onChange={(e) => setNewListName(e.target.value)}
-            placeholder="My Movie Rankings..."
+            placeholder={`My ${getListTypeDisplay(listType)} Rankings...`}
             className="flex-1 px-4 py-2 border rounded-md dark:bg-rich-black dark:border-brunswick-green/50"
             onKeyDown={(e) => e.key === "Enter" && handleCreateList()}
           />
@@ -86,7 +137,8 @@ const ListCreation: React.FC<ListCreationProps> = ({
                   <div>
                     <h3 className="text-lg font-medium">{list.name}</h3>
                     <p className="text-sm text-rich-black/60 dark:text-white/60">
-                      {list.items.length} items • Created{" "}
+                      {list.items.length}{" "}
+                      {getListTypeDisplay(list.listType ?? "movie")} • Created{" "}
                       {new Date(list.createdAt).toLocaleDateString()}
                     </p>
                   </div>

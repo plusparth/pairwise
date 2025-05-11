@@ -5,17 +5,28 @@ const MEDIA_LISTS_KEY = "pairwise-media-lists";
 // Helper function to check if we're in a browser environment
 const isBrowser = () => typeof window !== "undefined";
 
-// Get all media lists
+// Get all stored media lists
 export function getMediaLists(): MediaList[] {
   if (!isBrowser()) return [];
 
-  const storedLists = localStorage.getItem(MEDIA_LISTS_KEY);
-  if (!storedLists) return [];
-
   try {
-    return JSON.parse(storedLists);
+    const storedLists = localStorage.getItem(MEDIA_LISTS_KEY);
+    if (!storedLists) return [];
+
+    const lists = JSON.parse(storedLists) as MediaList[];
+
+    // Add listType for backwards compatibility with existing lists
+    return lists.map((list) => {
+      if (!list.listType) {
+        // Determine list type based on first item, default to "movie"
+        const firstItem = list.items[0];
+        const listType = firstItem ? firstItem.type : "movie";
+        return { ...list, listType };
+      }
+      return list;
+    });
   } catch (error) {
-    console.error("Error parsing stored media lists:", error);
+    console.error("Error loading media lists:", error);
     return [];
   }
 }

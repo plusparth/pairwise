@@ -38,8 +38,18 @@ const MediaList: React.FC<MediaListProps> = ({ list, onUpdate }) => {
   }, [list.items]);
 
   // Handle batch selecting media items
-  const handleBatchSelectComplete = (selectedItems: Media[]) => {
-    setBatchSelectedMedia(selectedItems);
+  const handleBatchSelectComplete = (selectedMedia: Media[]) => {
+    // Filter out any media that doesn't match the list type
+    const filteredMedia = selectedMedia.filter(
+      (media) => media.type === list.listType
+    );
+
+    if (filteredMedia.length < 2) {
+      alert(`Please select at least 2 ${list.listType} items to compare.`);
+      return;
+    }
+
+    setBatchSelectedMedia(filteredMedia);
     setCurrentScreen("batch-sort");
   };
 
@@ -168,6 +178,7 @@ const MediaList: React.FC<MediaListProps> = ({ list, onUpdate }) => {
             existingSortedItems={sortedItems}
             onComplete={handleBatchSelectComplete}
             onCancel={handleCancel}
+            mediaType={list.listType || "movie"}
           />
         );
 

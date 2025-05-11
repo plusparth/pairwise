@@ -1,21 +1,26 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Media, RankedMedia } from "../types/media";
 import { searchMedia } from "../services/tmdb";
+import { searchBooks } from "../services/openlibrary";
 import MediaCard from "./MediaCard";
 
 interface BatchMediaSelectionProps {
   existingSortedItems?: RankedMedia[];
   onComplete: (selectedMedia: Media[]) => void;
   onCancel: () => void;
+  mediaType: "movie" | "tv" | "book";
 }
 
 const BatchMediaSelection: React.FC<BatchMediaSelectionProps> = ({
   existingSortedItems = [],
   onComplete,
   onCancel,
+  mediaType,
 }) => {
   const [query, setQuery] = useState("");
-  const [searchType, setSearchType] = useState<"movie" | "tv">("movie");
+  const [searchType, setSearchType] = useState<"movie" | "tv" | "book">(
+    mediaType
+  );
   const [searchResults, setSearchResults] = useState<Media[]>([]);
   const [selectedMedia, setSelectedMedia] = useState<Media[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -40,6 +45,11 @@ const BatchMediaSelection: React.FC<BatchMediaSelectionProps> = ({
       searchInputRef.current.focus();
     }
   }, []);
+
+  // Set initial search type based on mediaType prop
+  useEffect(() => {
+    setSearchType(mediaType);
+  }, [mediaType]);
 
   // Debounced search when query changes
   useEffect(() => {
@@ -76,14 +86,21 @@ const BatchMediaSelection: React.FC<BatchMediaSelectionProps> = ({
     setError(null);
 
     try {
-      const results = await searchMedia(query, searchType);
+      let results: Media[] = [];
+
+      if (searchType === "book") {
+        results = await searchBooks(query);
+      } else {
+        results = await searchMedia(query, searchType);
+      }
+
       setSearchResults(results);
 
       if (results.length === 0) {
         setError("No results found. Try a different search term.");
       }
     } catch (err) {
-      setError("Error searching for media. Please try again.");
+      setError(`Error searching for ${searchType}. Please try again.`);
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -170,9 +187,28 @@ const BatchMediaSelection: React.FC<BatchMediaSelectionProps> = ({
       )
     ).length;
 
+  // Get the media type display name
+  const getMediaTypeDisplay = (type: "movie" | "tv" | "book") => {
+    switch (type) {
+      case "movie":
+        return "Movies";
+      case "tv":
+        return "TV Shows";
+      case "book":
+        return "Books";
+      default:
+        return "Media";
+    }
+  };
+
+  // Determine if search type switcher should be shown
+  const shouldShowTypeSelector = mediaType === "movie" || mediaType === "tv";
+
   return (
     <div className="w-full max-w-6xl mx-auto p-4">
-      <h2 className="text-2xl font-semibold mb-6">Select Movies & TV Shows</h2>
+      <h2 className="text-2xl font-semibold mb-6">
+        Select {getMediaTypeDisplay(mediaType)}
+      </h2>
 
       {existingSortedItems.length > 0 && (
         <div className="mb-4 px-4 py-3 bg-celadon/10 dark:bg-brunswick-green/20 rounded-md">
@@ -200,30 +236,32 @@ const BatchMediaSelection: React.FC<BatchMediaSelectionProps> = ({
 
       {/* Search controls */}
       <div className="mb-8">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="flex rounded-md overflow-hidden">
-            <button
-              className={`px-4 py-2 text-sm ${
-                searchType === "movie"
-                  ? "bg-brunswick-green text-white"
-                  : "bg-celadon/20 text-rich-black/70 dark:bg-brunswick-green/30 dark:text-white/80"
-              }`}
-              onClick={() => setSearchType("movie")}
-            >
-              Movies
-            </button>
-            <button
-              className={`px-4 py-2 text-sm ${
-                searchType === "tv"
-                  ? "bg-brunswick-green text-white"
-                  : "bg-celadon/20 text-rich-black/70 dark:bg-brunswick-green/30 dark:text-white/80"
-              }`}
-              onClick={() => setSearchType("tv")}
-            >
-              TV Shows
-            </button>
+        {shouldShowTypeSelector && (
+          <div className="flex items-center gap-2 mb-4">
+            <div className="flex rounded-md overflow-hidden">
+              <button
+                className={`px-4 py-2 text-sm ${
+                  searchType === "movie"
+                    ? "bg-brunswick-green text-white"
+                    : "bg-celadon/20 text-rich-black/70 dark:bg-brunswick-green/30 dark:text-white/80"
+                }`}
+                onClick={() => setSearchType("movie")}
+              >
+                Movies
+              </button>
+              <button
+                className={`px-4 py-2 text-sm ${
+                  searchType === "tv"
+                    ? "bg-brunswick-green text-white"
+                    : "bg-celadon/20 text-rich-black/70 dark:bg-brunswick-green/30 dark:text-white/80"
+                }`}
+                onClick={() => setSearchType("tv")}
+              >
+                TV Shows
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="relative">
           <input
@@ -231,9 +269,9 @@ const BatchMediaSelection: React.FC<BatchMediaSelectionProps> = ({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={`Search for ${
-              searchType === "movie" ? "movies" : "TV shows"
-            }...`}
+            placeholder={`Search for ${getMediaTypeDisplay(
+              searchType
+            ).toLowerCase()}...`}
             className="w-full px-4 py-2 border rounded-md dark:bg-rich-black dark:border-brunswick-green/50"
           />
           {isLoading && (
@@ -297,40 +335,22 @@ const BatchMediaSelection: React.FC<BatchMediaSelectionProps> = ({
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-lg font-medium">
             Selected Items ({selectedMedia.length})
-            {existingSortedItems.length > 0 &&
-              selectedMedia.length > existingSortedItems.length && (
-                <span className="ml-2 text-sm text-orange-peel">
-                  ({selectedMedia.length - existingSortedItems.length} new)
-                </span>
-              )}
           </h3>
-          <div className="flex gap-2">
-            {removedExistingCount > 0 && (
-              <button
-                onClick={handleRestoreAllExisting}
-                className="text-sm text-brunswick-green hover:text-brunswick-green/80 dark:text-celadon dark:hover:text-celadon/80"
-              >
-                Restore All Existing
-              </button>
-            )}
-            {selectedMedia.length >
-              existingSortedItems.length - removedExistingCount && (
-              <button
-                onClick={handleClearNew}
-                className="text-sm text-bittersweet hover:text-bittersweet/80"
-              >
-                {existingSortedItems.length > 0
-                  ? "Clear New Items"
-                  : "Clear All"}
-              </button>
-            )}
-          </div>
+          {selectedMedia.length > existingSortedItems.length && (
+            <button
+              onClick={handleClearNew}
+              className="text-sm text-bittersweet hover:text-bittersweet/80"
+            >
+              Clear New Items
+            </button>
+          )}
         </div>
 
         {selectedMedia.length === 0 ? (
           <div className="text-center py-10 bg-celadon/10 dark:bg-brunswick-green/20 rounded-lg">
             <p className="text-rich-black/60 dark:text-white/60">
-              Search and select movies or TV shows to add them here.
+              Search and select {getMediaTypeDisplay(searchType).toLowerCase()}{" "}
+              to add them here.
             </p>
           </div>
         ) : (
@@ -384,7 +404,7 @@ const BatchMediaSelection: React.FC<BatchMediaSelectionProps> = ({
           disabled={selectedMedia.length < 2}
           className="px-4 py-2 bg-brunswick-green text-white rounded-md disabled:bg-brunswick-green/50"
         >
-          Start Sorting ({selectedMedia.length})
+          Done
         </button>
       </div>
     </div>

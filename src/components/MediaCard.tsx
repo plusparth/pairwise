@@ -13,9 +13,17 @@ const MediaCard: React.FC<MediaCardProps> = ({
   onClick,
   showRating = false,
 }) => {
-  const imageUrl = media.posterPath
-    ? `https://image.tmdb.org/t/p/w300${media.posterPath}`
-    : "/placeholder-poster.svg";
+  let imageUrl;
+
+  if (media.type === "book") {
+    // OpenLibrary images already have the full URL
+    imageUrl = media.posterPath || "/placeholder-poster.svg";
+  } else {
+    // TMDB images need the base URL added
+    imageUrl = media.posterPath
+      ? `https://image.tmdb.org/t/p/w300${media.posterPath}`
+      : "/placeholder-poster.svg";
+  }
 
   // Type guard to check if media is RankedMedia with rating
   const hasRating = (
@@ -24,6 +32,17 @@ const MediaCard: React.FC<MediaCardProps> = ({
     return (
       "rating" in media && typeof (media as RankedMedia).rating === "number"
     );
+  };
+
+  // Format release info based on media type
+  const getReleaseInfo = () => {
+    if (!media.releaseDate) return "Unknown year";
+
+    if (media.type === "book") {
+      return `${media.releaseDate}`;
+    } else {
+      return media.releaseDate.split("-")[0] || "Unknown year";
+    }
   };
 
   return (
@@ -44,8 +63,17 @@ const MediaCard: React.FC<MediaCardProps> = ({
 
       <div className="p-2 bg-white dark:bg-rich-black">
         <h3 className="font-medium text-sm truncate">{media.title}</h3>
+
+        {/* Display authors for books */}
+        {media.type === "book" && media.authors && media.authors.length > 0 && (
+          <p className="text-xs text-rich-black/70 dark:text-white/70 truncate">
+            {media.authors[0]}
+            {media.authors.length > 1 ? " et al." : ""}
+          </p>
+        )}
+
         <p className="text-xs text-rich-black/60 dark:text-white/60">
-          {media.releaseDate?.split("-")[0] || "Unknown year"}
+          {getReleaseInfo()}
         </p>
 
         {showRating && hasRating(media) && (
