@@ -16,6 +16,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  basePath: "/pairwise",
+  output: "export",
+  reactStrictMode: true,
 };
 
 export default nextConfig;
