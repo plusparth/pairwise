@@ -201,9 +201,6 @@ const BatchMediaSelection: React.FC<BatchMediaSelectionProps> = ({
     }
   };
 
-  // Determine if search type switcher should be shown
-  const shouldShowTypeSelector = mediaType === "movie" || mediaType === "tv";
-
   return (
     <div className="w-full max-w-6xl mx-auto p-4">
       <h2 className="text-2xl font-semibold mb-6">
@@ -236,33 +233,6 @@ const BatchMediaSelection: React.FC<BatchMediaSelectionProps> = ({
 
       {/* Search controls */}
       <div className="mb-8">
-        {shouldShowTypeSelector && (
-          <div className="flex items-center gap-2 mb-4">
-            <div className="flex rounded-md overflow-hidden">
-              <button
-                className={`px-4 py-2 text-sm ${
-                  searchType === "movie"
-                    ? "bg-brunswick-green text-white"
-                    : "bg-celadon/20 text-rich-black/70 dark:bg-brunswick-green/30 dark:text-white/80"
-                }`}
-                onClick={() => setSearchType("movie")}
-              >
-                Movies
-              </button>
-              <button
-                className={`px-4 py-2 text-sm ${
-                  searchType === "tv"
-                    ? "bg-brunswick-green text-white"
-                    : "bg-celadon/20 text-rich-black/70 dark:bg-brunswick-green/30 dark:text-white/80"
-                }`}
-                onClick={() => setSearchType("tv")}
-              >
-                TV Shows
-              </button>
-            </div>
-          </div>
-        )}
-
         <div className="relative">
           <input
             ref={searchInputRef}

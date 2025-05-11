@@ -43,7 +43,7 @@ export default function Home() {
             className="text-xl font-bold cursor-pointer"
             onClick={handleBackToLists}
           >
-            Pairwise Media Rankings
+            pairwise
           </h1>
 
           {selectedList && (

@@ -323,7 +323,8 @@ const MediaList: React.FC<MediaListProps> = ({ list, onUpdate }) => {
         {sortedItems.length === 0 ? (
           <div className="text-center py-10 bg-celadon/10 dark:bg-brunswick-green/20 rounded-lg">
             <p className="text-gray-500 mb-4">
-              Your list is empty. Add some movies or TV shows to get started!
+              Your list is empty. Add some movies, TV shows, or books to get
+              started!
             </p>
             <div className="flex justify-center">
               <button

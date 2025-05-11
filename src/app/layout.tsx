@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Pairwise Media Rankings",
-  description: "Rank movies and TV shows through pairwise comparisons",
+  title: "pairwise",
+  description: "Rank media through pairwise comparisons",
 };
 
 export default function RootLayout({
