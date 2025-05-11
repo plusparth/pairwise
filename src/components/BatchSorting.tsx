@@ -50,6 +50,12 @@ const BatchSorting: React.FC<BatchSortingProps> = ({
   const [sortedCount, setSortedCount] = useState(0);
   const [comparisonCount, setComparisonCount] = useState(0);
 
+  // Animation state
+  const [selectedCardType, setSelectedCardType] = useState<
+    "new" | "existing" | null
+  >(null);
+  const [isAnimating, setIsAnimating] = useState(false);
+
   // Helper function to check if a media item already exists in a list
   const isMediaDuplicate = (
     media: Media,
@@ -116,7 +122,7 @@ const BatchSorting: React.FC<BatchSortingProps> = ({
     if (currentStage !== "sorting") return;
 
     // If no current item, pick the next one from remaining
-    if (!currentItem && remainingItems.length > 0) {
+    if (!currentItem && remainingItems.length > 0 && !isAnimating) {
       setCurrentItem(remainingItems[0]);
       setRemainingItems(remainingItems.slice(1));
 
@@ -124,17 +130,18 @@ const BatchSorting: React.FC<BatchSortingProps> = ({
       setLow(0);
       setHigh(sortedItems.length);
       setComparisonIndex(null);
+      setSelectedCardType(null);
     }
 
     // If we've sorted all items, we're done
-    if (!currentItem && remainingItems.length === 0) {
+    if (!currentItem && remainingItems.length === 0 && !isAnimating) {
       setCurrentStage("complete");
     }
-  }, [currentStage, currentItem, remainingItems, sortedItems]);
+  }, [currentStage, currentItem, remainingItems, sortedItems, isAnimating]);
 
   // Update the comparison index whenever the bounds change
   useEffect(() => {
-    if (currentStage !== "sorting" || !currentItem) return;
+    if (currentStage !== "sorting" || !currentItem || isAnimating) return;
 
     // Check if we've narrowed down to a single position
     if (low >= high) {
@@ -159,24 +166,50 @@ const BatchSorting: React.FC<BatchSortingProps> = ({
     // Calculating the index for the next comparison
     const nextIndex = getNextComparisonIndex(sortedItems, low, high);
     setComparisonIndex(nextIndex);
-  }, [currentStage, currentItem, sortedItems, low, high, sortedCount]);
+  }, [
+    currentStage,
+    currentItem,
+    sortedItems,
+    low,
+    high,
+    sortedCount,
+    isAnimating,
+  ]);
 
   // Handle when the user selects that the new item is better
-  const handleBetter = () => {
-    if (comparisonIndex === null) return;
+  const handlePreferNewItem = () => {
+    if (comparisonIndex === null || isAnimating) return;
 
-    // If new item is better, it goes after the current comparison item
-    setLow(comparisonIndex + 1);
-    setComparisonCount(comparisonCount + 1);
+    // Start animation
+    setSelectedCardType("new");
+    setIsAnimating(true);
+
+    // After animation completes, update the sorting algorithm
+    setTimeout(() => {
+      // If new item is better, it goes after the current comparison item
+      setLow(comparisonIndex + 1);
+      setComparisonCount(comparisonCount + 1);
+      setSelectedCardType(null);
+      setIsAnimating(false);
+    }, 500); // Animation duration
   };
 
   // Handle when the user selects that the new item is worse
-  const handleWorse = () => {
-    if (comparisonIndex === null) return;
+  const handlePreferExistingItem = () => {
+    if (comparisonIndex === null || isAnimating) return;
 
-    // If new item is worse, it goes before the current comparison item
-    setHigh(comparisonIndex);
-    setComparisonCount(comparisonCount + 1);
+    // Start animation
+    setSelectedCardType("existing");
+    setIsAnimating(true);
+
+    // After animation completes, update the sorting algorithm
+    setTimeout(() => {
+      // If new item is worse, it goes before the current comparison item
+      setHigh(comparisonIndex);
+      setComparisonCount(comparisonCount + 1);
+      setSelectedCardType(null);
+      setIsAnimating(false);
+    }, 500); // Animation duration
   };
 
   // Continue to the next stage
@@ -210,7 +243,7 @@ const BatchSorting: React.FC<BatchSortingProps> = ({
     <div className="w-full max-w-4xl mx-auto p-4">
       <div className="mb-6">
         <h2 className="text-2xl font-semibold text-center mb-2">
-          Which do you prefer?
+          Click on the item you prefer
         </h2>
         <div className="flex justify-between items-center">
           <p className="text-sm text-rich-black/60 dark:text-white/60">
@@ -223,7 +256,7 @@ const BatchSorting: React.FC<BatchSortingProps> = ({
 
         <div className="w-full bg-celadon/20 dark:bg-brunswick-green/30 h-2 rounded-full mt-2">
           <div
-            className="bg-orange-peel h-2 rounded-full"
+            className="bg-orange-peel h-2 rounded-full transition-all duration-300"
             style={{ width: `${(sortedCount / totalItems) * 100}%` }}
           />
         </div>
@@ -232,33 +265,67 @@ const BatchSorting: React.FC<BatchSortingProps> = ({
       {currentItem && comparisonIndex !== null && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="flex flex-col items-center gap-4">
-            <div className="w-full max-w-[250px]">
-              <MediaCard media={currentItem} />
-            </div>
-            <h3 className="text-lg font-medium text-center">
-              {currentItem.title}
-            </h3>
-            <button
-              onClick={handleBetter}
-              className="px-6 py-3 bg-brunswick-green text-white rounded-md w-full max-w-[250px]"
+            <div
+              className={`w-full max-w-[250px] relative group cursor-pointer transform transition-all duration-300 
+                ${
+                  selectedCardType === "new"
+                    ? "scale-110 shadow-[0_0_20px_rgba(85,183,152,0.8)]"
+                    : ""
+                } 
+                ${
+                  selectedCardType === "existing"
+                    ? "scale-75 opacity-50 rotate-3"
+                    : ""
+                }
+                ${
+                  !isAnimating
+                    ? "hover:scale-105 hover:shadow-[0_0_15px_rgba(85,183,152,0.5)]"
+                    : ""
+                }
+              `}
+              onClick={handlePreferNewItem}
             >
-              I prefer this
-            </button>
+              <MediaCard media={currentItem} />
+              <div
+                className={`absolute inset-0 bg-celadon ${
+                  selectedCardType === "new"
+                    ? "opacity-20"
+                    : "opacity-0 group-hover:opacity-10"
+                } rounded-lg transition-opacity duration-200`}
+              ></div>
+            </div>
           </div>
 
           <div className="flex flex-col items-center gap-4">
-            <div className="w-full max-w-[250px]">
-              <MediaCard media={sortedItems[comparisonIndex]} />
-            </div>
-            <h3 className="text-lg font-medium text-center">
-              {sortedItems[comparisonIndex].title}
-            </h3>
-            <button
-              onClick={handleWorse}
-              className="px-6 py-3 bg-brunswick-green text-white rounded-md w-full max-w-[250px]"
+            <div
+              className={`w-full max-w-[250px] relative group cursor-pointer transform transition-all duration-300 
+                ${
+                  selectedCardType === "existing"
+                    ? "scale-110 shadow-[0_0_20px_rgba(85,183,152,0.8)]"
+                    : ""
+                } 
+                ${
+                  selectedCardType === "new"
+                    ? "scale-75 opacity-50 rotate-3"
+                    : ""
+                }
+                ${
+                  !isAnimating
+                    ? "hover:scale-105 hover:shadow-[0_0_15px_rgba(85,183,152,0.5)]"
+                    : ""
+                }
+              `}
+              onClick={handlePreferExistingItem}
             >
-              I prefer this
-            </button>
+              <MediaCard media={sortedItems[comparisonIndex]} />
+              <div
+                className={`absolute inset-0 bg-celadon ${
+                  selectedCardType === "existing"
+                    ? "opacity-20"
+                    : "opacity-0 group-hover:opacity-10"
+                } rounded-lg transition-opacity duration-200`}
+              ></div>
+            </div>
           </div>
         </div>
       )}

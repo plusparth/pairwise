@@ -49,8 +49,63 @@ const MediaList: React.FC<MediaListProps> = ({ list, onUpdate }) => {
       return;
     }
 
-    setBatchSelectedMedia(filteredMedia);
-    setCurrentScreen("batch-sort");
+    // Check if we've only removed items (no new items added)
+    const existingIds = new Set(
+      sortedItems.map((item) => `${item.id}-${item.type}`)
+    );
+    const selectedIds = new Set(
+      filteredMedia.map((item) => `${item.id}-${item.type}`)
+    );
+
+    // Get items that exist in sorted items but not in selected media (items to remove)
+    const hasRemovedItems = sortedItems.some(
+      (item) => !selectedIds.has(`${item.id}-${item.type}`)
+    );
+
+    // Get items that exist in selected media but not in sorted items (new items)
+    const hasNewItems = filteredMedia.some(
+      (item) => !existingIds.has(`${item.id}-${item.type}`)
+    );
+
+    // If we've only removed items (no new items), we can skip sorting
+    if (hasRemovedItems && !hasNewItems) {
+      // Convert the remaining selected items back to RankedMedia format
+      const updatedItems: RankedMedia[] = filteredMedia.map((media) => {
+        // Try to find the existing item to keep its rank and rating
+        const existingItem = sortedItems.find(
+          (item) => item.id === media.id && item.type === media.type
+        );
+
+        if (existingItem) {
+          return existingItem;
+        }
+
+        // If it's somehow a new item (shouldn't happen in this case)
+        return {
+          ...media,
+          rank: 0, // Will be updated in the next step
+        };
+      });
+
+      // Re-rank the items to ensure continuous ranking
+      const rerankedItems = updatedItems.map((item, index) => ({
+        ...item,
+        rank: updatedItems.length - 1 - index,
+      }));
+
+      // Update the list with the reranked items
+      setSortedItems(rerankedItems);
+      updateRankings(list.id, rerankedItems);
+      onUpdate({
+        ...list,
+        items: rerankedItems,
+      });
+      setCurrentScreen("list");
+    } else {
+      // We have new items, so proceed with the batch sorting
+      setBatchSelectedMedia(filteredMedia);
+      setCurrentScreen("batch-sort");
+    }
   };
 
   // Handle batch sorting completion
@@ -231,7 +286,11 @@ const MediaList: React.FC<MediaListProps> = ({ list, onUpdate }) => {
         key={`${item.id}-${item.type}`}
         className={`
           relative 
-          ${isUnrated ? "cursor-grab active:cursor-grabbing" : ""}
+          ${
+            isUnrated
+              ? "cursor-grab active:cursor-grabbing hover:scale-105"
+              : ""
+          }
           ${isDragged ? "opacity-50 scale-95" : ""}
           ${showDropBefore ? "border-t-2 border-orange-peel pt-2" : ""}
           transition-all duration-200

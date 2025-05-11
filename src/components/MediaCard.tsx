@@ -45,9 +45,14 @@ const MediaCard: React.FC<MediaCardProps> = ({
     }
   };
 
+  // Only add hover effect if there's a click handler
+  const isInteractive = Boolean(onClick);
+
   return (
     <div
-      className="relative overflow-hidden rounded-lg shadow-md cursor-pointer transition-transform hover:scale-105"
+      className={`relative overflow-hidden rounded-lg shadow-md ${
+        isInteractive ? "cursor-pointer" : ""
+      } transition-transform ${isInteractive ? "hover:scale-105" : ""}`}
       onClick={onClick}
     >
       <div className="aspect-[2/3] w-full relative">

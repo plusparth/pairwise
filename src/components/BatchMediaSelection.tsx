@@ -29,6 +29,10 @@ const BatchMediaSelection: React.FC<BatchMediaSelectionProps> = ({
     null
   );
 
+  // Animation state
+  const [mediaToRemove, setMediaToRemove] = useState<Media | null>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
+
   // Reference to the search input for focusing
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -130,11 +134,22 @@ const BatchMediaSelection: React.FC<BatchMediaSelectionProps> = ({
 
   // Handle removing a media item from the selection
   const handleRemoveMedia = (media: Media) => {
-    setSelectedMedia(
-      selectedMedia.filter(
-        (item) => !(item.id === media.id && item.type === media.type)
-      )
-    );
+    if (isAnimating) return;
+
+    // Start removal animation
+    setMediaToRemove(media);
+    setIsAnimating(true);
+
+    // After animation completes, actually remove the item
+    setTimeout(() => {
+      setSelectedMedia(
+        selectedMedia.filter(
+          (item) => !(item.id === media.id && item.type === media.type)
+        )
+      );
+      setMediaToRemove(null);
+      setIsAnimating(false);
+    }, 500); // Animation duration
   };
 
   // Handle completing the selection process
@@ -149,6 +164,8 @@ const BatchMediaSelection: React.FC<BatchMediaSelectionProps> = ({
 
   // Handle clearing all selected media except existing items
   const handleClearNew = () => {
+    if (isAnimating) return;
+
     // If we have existingSortedItems, keep those and remove only new items
     if (existingSortedItems.length > 0) {
       setSelectedMedia([...existingSortedItems]);
@@ -166,6 +183,8 @@ const BatchMediaSelection: React.FC<BatchMediaSelectionProps> = ({
 
   // Restore all original items
   const handleRestoreAllExisting = () => {
+    if (isAnimating) return;
+
     // Get all newly added items (items that aren't in existingSortedItems)
     const newItems = selectedMedia.filter(
       (media) =>
@@ -199,6 +218,15 @@ const BatchMediaSelection: React.FC<BatchMediaSelectionProps> = ({
       default:
         return "Media";
     }
+  };
+
+  // Check if a media item is being removed
+  const isBeingRemoved = (media: Media) => {
+    return (
+      mediaToRemove !== null &&
+      mediaToRemove.id === media.id &&
+      mediaToRemove.type === media.type
+    );
   };
 
   return (
@@ -310,6 +338,7 @@ const BatchMediaSelection: React.FC<BatchMediaSelectionProps> = ({
             <button
               onClick={handleClearNew}
               className="text-sm text-bittersweet hover:text-bittersweet/80"
+              disabled={isAnimating}
             >
               Clear New Items
             </button>
@@ -327,14 +356,19 @@ const BatchMediaSelection: React.FC<BatchMediaSelectionProps> = ({
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {selectedMedia.map((media) => {
               const isExisting = isExistingItem(media);
+              const itemBeingRemoved = isBeingRemoved(media);
 
               return (
                 <div
                   key={`selected-${media.id}-${media.type}`}
-                  className={`relative ${
+                  className={`relative transform transition-all duration-300 ${
                     isExisting
                       ? "ring-1 ring-celadon/50 dark:ring-brunswick-green/50"
                       : ""
+                  } ${
+                    itemBeingRemoved
+                      ? "scale-75 opacity-0 rotate-12"
+                      : "scale-100 opacity-100"
                   }`}
                 >
                   <MediaCard media={media} />
@@ -346,6 +380,7 @@ const BatchMediaSelection: React.FC<BatchMediaSelectionProps> = ({
                         : "bg-bittersweet text-white hover:bg-bittersweet/80"
                     }`}
                     aria-label="Remove"
+                    disabled={isAnimating}
                   >
                     ×
                   </button>
@@ -371,7 +406,7 @@ const BatchMediaSelection: React.FC<BatchMediaSelectionProps> = ({
         </button>
         <button
           onClick={handleComplete}
-          disabled={selectedMedia.length < 2}
+          disabled={selectedMedia.length < 2 || isAnimating}
           className="px-4 py-2 bg-brunswick-green text-white rounded-md disabled:bg-brunswick-green/50"
         >
           Done

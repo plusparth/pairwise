@@ -1134,13 +1134,6 @@ const BellCurveRating: React.FC<BellCurveRatingProps> = ({
                 style={{ cursor: "grab" }}
               >
                 <MediaCard media={item} showRating />
-                <div
-                  className={`absolute top-0 right-0 text-white text-xs px-1 py-0.5 rounded-bl-md transition-colors ${
-                    isHighlighted ? "bg-bittersweet" : "bg-brunswick-green"
-                  }`}
-                >
-                  #{index + 1}
-                </div>
                 {isHighlighted && (
                   <div className="absolute inset-0 border-2 border-bittersweet rounded-md pointer-events-none" />
                 )}
